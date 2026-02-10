@@ -120,7 +120,7 @@ namespace NumericalAnalysis {
                 degree = 0;
             }
             if (sign == "-") value = -value;
-            if (value = 0) return;
+            if (value == 0) return;
             coeff.insert({degree, value});
         }   
 

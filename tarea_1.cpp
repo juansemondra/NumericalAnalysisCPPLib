@@ -3,6 +3,19 @@
 
 int main (int argc, char** argv) {
 
+    for (int i = 0; i < argc; i++){
+        std::string temporal = argv[i];
+        if (temporal == "--help"){
+            std::cout << "Usage: " << argv[0] << " function" << " point_a" << " point_b" << " tolerance" << " iterations" << std::endl;
+            std::cout << "Function format: x^2 + x + 1 (Non Spaced String)" << std::endl;
+            std::cout << "Point a: double" << std::endl;
+            std::cout << "Point b: double" << std::endl;
+            std::cout << "Tolerance: integer" << std::endl;
+            std::cout << "Iterations: integer" << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
+
     if(argc < 6)
     {
         std::cerr  << "Usage: " << argv[0] << " function" << " point_a" << " point_b" << " tolerance" << " iterations" << std::endl;
