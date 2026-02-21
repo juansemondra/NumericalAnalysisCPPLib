@@ -1,5 +1,6 @@
 #include <iostream>
 #include "numericalanalysis.h"
+#include "menu.h"
 
 int main(int argc, char **argv)
 {
@@ -9,44 +10,47 @@ int main(int argc, char **argv)
         std::string temporal = argv[i];
         if (temporal == "--help")
         {
-            std::cout << "Usage: " << argv[0] << " function" << " point_a" << " point_b" << " tolerance" << " iterations" << std::endl;
-            std::cout << "Function format: x^2 + x + 1 (Non Spaced String)" << std::endl;
-            std::cout << "Point a: double" << std::endl;
-            std::cout << "Point b: double" << std::endl;
-            std::cout << "Tolerance: integer" << std::endl;
-            std::cout << "Iterations: integer" << std::endl;
-            return EXIT_FAILURE;
+            helper_function();
+            return EXIT_SUCCESS;
         }
     }
+    bool menu_continue = true;
+    int menu_option;
 
-    if (argc < 6)
-    {
-        std::cerr << "Usage: " << argv[0] << " function" << " point_a" << " point_b" << " tolerance" << " iterations" << std::endl;
-        return EXIT_FAILURE;
+    while (menu_continue){
+        print_menu();
+        std::cin >> menu_option;
+        std::cout << std::endl;
+        switch (menu_option){
+            case 1:
+                check_error(call_bisection());
+            break;
+
+            case 2:
+                check_error(call_fixed_point());
+            break;
+
+            case 3:
+                check_error(call_fake_position());
+            break;
+
+            case 4:
+                check_error(call_newton_raphson());
+            break;
+
+            case 5:
+                check_error(call_secant_method());
+            break;
+
+            case 0:
+                std::cout << "Gracias por usar el sistema!" << std::endl;
+                menu_continue = false;
+            break;
+
+            default:
+            break;
+        }
     }
-
-    std::string function_str = argv[1];
-    double point_a = std::stod(argv[2]);
-    double point_b = std::stod(argv[3]);
-    int tolerance = std::stoi(argv[4]);
-    int iterations = std::stoi(argv[5]);
-    NumericalAnalysis::Function function;
-    function.extract_expression(function_str);
-
-    if (point_a * point_b > 0)
-    {
-        std::cerr << "Para que el método de la bisección pueda funcionar, se necesita un punto a negativo y un punto b positivo." << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    double result = NumericalAnalysis::bisection(function, point_a, point_b, tolerance, iterations);
-
-    if (result == -1)
-    {
-        std::cerr << "No se logró hallar el resultado con la tolerancia: " << tolerance << std::endl;
-        return EXIT_FAILURE;
-    }
-    std::cout << "Resultado del metodo de biseccion: " << result << std::endl;
 
     return EXIT_SUCCESS;
 }

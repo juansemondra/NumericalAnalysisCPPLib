@@ -346,8 +346,8 @@ namespace NumericalAnalysis
     double newton_raphson(Function func, double initial_point, double tolerance, int iterations){
         double point = initial_point;
         double next_point;
-        double fp;
         for (int i = 0; i < iterations; i++){
+            if (std::abs(func.derivate_evaluate(point)) < 1e-12) return -1;
             next_point = point - (func.evaluate(point) / func.derivate_evaluate(point));
             if (std::abs(next_point - point) < tolerance) return next_point;
             point = next_point;
@@ -357,13 +357,11 @@ namespace NumericalAnalysis
 
     double secant_method(Function func, double point_a, double point_b, double tolerance, int iterations) {
         // Entendemos como point_a = x(n-1), point_b = x(n) y p = x(n+1)
-        double fa;
-        double fb;
-        double p;
-        double fp;
+        double fa, fb, p;
         for (int i = 0; i < iterations; i++){
             fa = func.evaluate(point_a);
             fb = func.evaluate(point_b);
+            if (std::abs(fb - fa) < 1e-12) return -1;
             p = ( (point_a * fb) - (point_b * fa) ) / (fb - fa);
             if (NumericalAnalysis::evaluate_tolerance(point_b, p, tolerance)) return p;
             point_a = point_b;
