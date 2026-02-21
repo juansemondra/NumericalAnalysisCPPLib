@@ -2,28 +2,32 @@
 #define NUMERICALANALYSIS_H
 
 #include <map>
+#include <string>
 #include <iostream>
 
 namespace NumericalAnalysis {
 
-    class Polynomial{
-        private:
-        std::map<int, double> coeff;
+    class Function {
+    private:
+        std::map<std::string, float> coeff;
+        bool valid_key(const std::string& key) const;
+        double evaluate_key(const std::string& key, double x) const;
 
-        public:
-        Polynomial();
-        double evaluate(double value);
-        double get(int degree);
-        void update(int degree, double val);
-        void add(int degree, double val);
-        void extract_expression(std::string expression);
+    public:
+        Function();
+        double evaluate(double x) const;
+        float get(const std::string& key) const;
+        void update(const std::string& key, float val);
+        void add(const std::string& key, float val);
+        void extract_expression(const std::string& expression);
+        void print() const;
     };
 
-    double bisection(Polynomial pol, double point_a, double point_b, int tolerance, int iterations);
-    bool evaluate_tolerance(double value, int tolerance);
+    double bisection(Function func, double point_a, double point_b,
+                     int tolerance, int iterations);
 
-    
+    bool evaluate_tolerance(double value, int tolerance);
 
 }
 
-#endif
+#endif 

@@ -44,7 +44,10 @@ int main (int argc, char** argv) {
     }
 
     double result = NumericalAnalysis::bisection(function, point_a, point_b, tolerance, iterations);
-
+    if (result  == -1) {
+        std::cerr << "No se logró hallar el resultado con la tolerancia: " << tolerance << std::endl;
+        return EXIT_FAILURE;
+    }
     std::cout << "Resultado del metodo de biseccion: " << result << std::endl;
 
     return EXIT_SUCCESS;
