@@ -9,7 +9,7 @@ namespace NumericalAnalysis {
 
     class Function {
     private:
-        std::map<std::string, float> coeff;
+        std::map<std::string, double> coeff;
         bool valid_key(const std::string& key) const;
         double evaluate_key(const std::string& key, double x) const;
 
@@ -23,11 +23,13 @@ namespace NumericalAnalysis {
         void print() const;
     };
 
-    double bisection(Function func, double point_a, double point_b,
-                     int tolerance, int iterations);
+    bool evaluate_tolerance(double xn, double xnp1, double tolerance);
 
-    bool evaluate_tolerance(double value, int tolerance);
-
+    double bisection(Function func, double point_a, double point_b, double tolerance, int iterations);
+    double fixed_point(Function func, double initial_point, double tolerance, int iterations);
+    double fake_position(Function func, double point_a, double point_b, double tolerance, int iterations);
+    double newton_raphson(Function func, double initial_point, double tolerance, int iterations);
+    double secant_method(Function func, double point_a, double point_b, double tolerance, int iterations);
 }
 
 #endif 

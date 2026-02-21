@@ -1,11 +1,14 @@
 #include <iostream>
 #include "numericalanalysis.h"
 
-int main (int argc, char** argv) {
+int main(int argc, char **argv)
+{
 
-    for (int i = 0; i < argc; i++){
+    for (int i = 0; i < argc; i++)
+    {
         std::string temporal = argv[i];
-        if (temporal == "--help"){
+        if (temporal == "--help")
+        {
             std::cout << "Usage: " << argv[0] << " function" << " point_a" << " point_b" << " tolerance" << " iterations" << std::endl;
             std::cout << "Function format: x^2 + x + 1 (Non Spaced String)" << std::endl;
             std::cout << "Point a: double" << std::endl;
@@ -16,9 +19,9 @@ int main (int argc, char** argv) {
         }
     }
 
-    if(argc < 6)
+    if (argc < 6)
     {
-        std::cerr  << "Usage: " << argv[0] << " function" << " point_a" << " point_b" << " tolerance" << " iterations" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " function" << " point_a" << " point_b" << " tolerance" << " iterations" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -27,24 +30,19 @@ int main (int argc, char** argv) {
     double point_b = std::stod(argv[3]);
     int tolerance = std::stoi(argv[4]);
     int iterations = std::stoi(argv[5]);
-    NumericalAnalysis::Polynomial function;
+    NumericalAnalysis::Function function;
     function.extract_expression(function_str);
 
-    if (point_a > 0 && point_b > 0) {
-    std::cerr << "For the bisectional method to work one point must be positive and one negative." << std::endl;
-    return EXIT_FAILURE;
-    }
-    else if (point_a < 0 && point_b < 0) {
-    std::cerr << "For the bisectional method to work one point must be positive and one negative." << std::endl;
-    return EXIT_FAILURE;
-    }
-    if (point_a == 0 || point_b == 0) {
-    std::cerr << "For the bisectional method to work one point must be positive and one negative." << std::endl;
-    return EXIT_FAILURE;
+    if (point_a * point_b > 0)
+    {
+        std::cerr << "For the bisectional method to work one point must be positive and one negative." << std::endl;
+        return EXIT_FAILURE;
     }
 
     double result = NumericalAnalysis::bisection(function, point_a, point_b, tolerance, iterations);
-    if (result  == -1) {
+    
+    if (result == -1)
+    {
         std::cerr << "No se logró hallar el resultado con la tolerancia: " << tolerance << std::endl;
         return EXIT_FAILURE;
     }
