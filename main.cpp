@@ -35,12 +35,12 @@ int main(int argc, char **argv)
 
     if (point_a * point_b > 0)
     {
-        std::cerr << "For the bisectional method to work one point must be positive and one negative." << std::endl;
+        std::cerr << "Para que el método de la bisección pueda funcionar, se necesita un punto a negativo y un punto b positivo." << std::endl;
         return EXIT_FAILURE;
     }
 
     double result = NumericalAnalysis::bisection(function, point_a, point_b, tolerance, iterations);
-    
+
     if (result == -1)
     {
         std::cerr << "No se logró hallar el resultado con la tolerancia: " << tolerance << std::endl;

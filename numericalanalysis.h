@@ -16,12 +16,16 @@ namespace NumericalAnalysis {
     public:
         Function();
         double evaluate(double x) const;
+        double derivate_evaluate(double x) const;
         float get(const std::string& key) const;
         void update(const std::string& key, float val);
         void add(const std::string& key, float val);
         void extract_expression(const std::string& expression);
         void print() const;
     };
+
+    static double eval_arg(const std::string &arg, double x);
+    static double eval_arg_deriv(const std::string &arg, double x);
 
     bool evaluate_tolerance(double xn, double xnp1, double tolerance);
 
