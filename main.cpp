@@ -48,6 +48,7 @@ int main(int argc, char **argv)
             break;
 
             default:
+                std::cout << "Opción inválida, por favor intente nuevamente" << std::endl;
             break;
         }
     }
