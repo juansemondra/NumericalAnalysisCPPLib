@@ -3,6 +3,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 #include <iostream>
 
 namespace NumericalAnalysis {
@@ -24,6 +25,33 @@ namespace NumericalAnalysis {
         void    print                   () const;
     };
 
+    class Matrix {
+    private:
+        std::vector<std::vector<double>> data;
+        int rows;
+        int columns;
+    public:
+        Matrix                          ();
+        Matrix                          (const std::string& filename);
+        Matrix                          (int rows, int columns);
+        Matrix                          (const std::vector<std::vector<double>>& data);
+        void    set                     (int row, int column, double value);
+        double  get                     (int row, int column) const;
+        void    print                   () const;
+        void    add                     (const Matrix& other);
+        void    subtract                (const Matrix& other);
+        void    multiply                (const Matrix& other);
+        void    divide                  (const Matrix& other);
+        void    transpose               ();
+        void    inverse                 ();
+        double  determinant             ();
+        int     rank                    ();
+        void    read_from_file          (const std::string& filename);
+        void    write_to_file           (const std::string& filename) const;
+        int     getRows                 () const;
+        int     getCols                 () const;
+    };
+    
     static double eval_arg          (const std::string &arg, double x);
     static double eval_arg_deriv    (const std::string &arg, double x);
 
@@ -34,6 +62,14 @@ namespace NumericalAnalysis {
     double fake_position    (Function func, double point_a, double point_b, double tolerance, int iterations);
     double newton_raphson   (Function func, double initial_point, double tolerance, int iterations);
     double secant_method    (Function func, double point_a, double point_b, double tolerance, int iterations);
+
+
+    // Funciones segundo corte
+
+    Matrix regressive_substitution(Matrix matrix);
+    Matrix gaussian_elimination_with_regressive_substitution(Matrix matrix);
+    Matrix lu_substitution(Matrix matrix);
+    Matrix gauss_seidel(Matrix matrix, Matrix initial, double tolerance, int iterations);
 }
 
 #endif 

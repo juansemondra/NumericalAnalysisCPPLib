@@ -2,8 +2,10 @@
 #include <cmath>
 #include <regex>
 #include <string>
+#include <vector>
 #include <iomanip>
 #include <sstream>
+#include <fstream>
 #include <algorithm>
 #include <stdexcept>
 
@@ -283,6 +285,266 @@ namespace NumericalAnalysis
     }
 
  
+    // =====================================================================
+    //  Matrix class implementation
+    // =====================================================================
+
+    Matrix::Matrix() : rows(0), columns(0) {}
+
+    Matrix::Matrix(const std::string& filename) : rows(0), columns(0)
+    {
+        // TODO: implement when file format is defined
+    }
+
+    Matrix::Matrix(int rows, int columns)
+        : data(rows, std::vector<double>(columns, 0.0)),
+          rows(rows), columns(columns) {}
+
+    Matrix::Matrix(const std::vector<std::vector<double>>& data)
+        : data(data),
+          rows(static_cast<int>(data.size())),
+          columns(data.empty() ? 0 : static_cast<int>(data[0].size())) {}
+
+    void Matrix::set(int row, int column, double value)
+    {
+        if (row < 0 || row >= rows || column < 0 || column >= columns)
+        {
+            std::cerr << "[Matrix::set] Index out of bounds ("
+                      << row << ", " << column << ")\n";
+            return;
+        }
+        data[row][column] = value;
+    }
+
+    double Matrix::get(int row, int column) const
+    {
+        if (row < 0 || row >= rows || column < 0 || column >= columns)
+        {
+            std::cerr << "[Matrix::get] Index out of bounds ("
+                      << row << ", " << column << ")\n";
+            return 0.0;
+        }
+        return data[row][column];
+    }
+
+    int Matrix::getRows() const { return rows; }
+    int Matrix::getCols() const { return columns; }
+
+    void Matrix::print() const
+    {
+        for (int i = 0; i < rows; i++)
+        {
+            std::cout << "| ";
+            for (int j = 0; j < columns; j++)
+                std::cout << std::setw(10) << std::fixed
+                          << std::setprecision(4) << data[i][j] << " ";
+            std::cout << "|\n";
+        }
+    }
+
+    void Matrix::add(const Matrix& other)
+    {
+        if (rows != other.rows || columns != other.columns)
+        {
+            std::cerr << "[Matrix::add] Dimension mismatch\n";
+            return;
+        }
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < columns; j++)
+                data[i][j] += other.data[i][j];
+    }
+
+    void Matrix::subtract(const Matrix& other)
+    {
+        if (rows != other.rows || columns != other.columns)
+        {
+            std::cerr << "[Matrix::subtract] Dimension mismatch\n";
+            return;
+        }
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < columns; j++)
+                data[i][j] -= other.data[i][j];
+    }
+
+    void Matrix::multiply(const Matrix& other)
+    {
+        if (columns != other.rows)
+        {
+            std::cerr << "[Matrix::multiply] Incompatible dimensions ("
+                      << rows << "x" << columns << ") * ("
+                      << other.rows << "x" << other.columns << ")\n";
+            return;
+        }
+        std::vector<std::vector<double>> result(
+            rows, std::vector<double>(other.columns, 0.0));
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < other.columns; j++)
+                for (int k = 0; k < columns; k++)
+                    result[i][j] += data[i][k] * other.data[k][j];
+        data = result;
+        columns = other.columns;
+    }
+
+    void Matrix::divide(const Matrix& other)
+    {
+        if (rows != other.rows || columns != other.columns)
+        {
+            std::cerr << "[Matrix::divide] Dimension mismatch\n";
+            return;
+        }
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < columns; j++)
+            {
+                if (std::abs(other.data[i][j]) < 1e-12)
+                {
+                    std::cerr << "[Matrix::divide] Division by zero at ("
+                              << i << ", " << j << ")\n";
+                    return;
+                }
+                data[i][j] /= other.data[i][j];
+            }
+    }
+
+    void Matrix::transpose()
+    {
+        std::vector<std::vector<double>> result(
+            columns, std::vector<double>(rows));
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < columns; j++)
+                result[j][i] = data[i][j];
+        data = result;
+        std::swap(rows, columns);
+    }
+
+    void Matrix::inverse()
+    {
+        if (rows != columns)
+        {
+            std::cerr << "[Matrix::inverse] Matrix must be square\n";
+            return;
+        }
+        int n = rows;
+        std::vector<std::vector<double>> aug(n, std::vector<double>(2 * n, 0.0));
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+                aug[i][j] = data[i][j];
+            aug[i][n + i] = 1.0;
+        }
+
+        for (int i = 0; i < n; i++)
+        {
+            int maxRow = i;
+            for (int k = i + 1; k < n; k++)
+                if (std::abs(aug[k][i]) > std::abs(aug[maxRow][i]))
+                    maxRow = k;
+            std::swap(aug[i], aug[maxRow]);
+
+            if (std::abs(aug[i][i]) < 1e-12)
+            {
+                std::cerr << "[Matrix::inverse] Singular matrix, cannot invert\n";
+                return;
+            }
+
+            double pivot = aug[i][i];
+            for (int j = 0; j < 2 * n; j++)
+                aug[i][j] /= pivot;
+
+            for (int k = 0; k < n; k++)
+            {
+                if (k != i)
+                {
+                    double factor = aug[k][i];
+                    for (int j = 0; j < 2 * n; j++)
+                        aug[k][j] -= factor * aug[i][j];
+                }
+            }
+        }
+
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                data[i][j] = aug[i][n + j];
+    }
+
+    double Matrix::determinant()
+    {
+        if (rows != columns)
+        {
+            std::cerr << "[Matrix::determinant] Matrix must be square\n";
+            return 0.0;
+        }
+        int n = rows;
+        auto temp = data;
+        double det = 1.0;
+        int sign = 1;
+
+        for (int i = 0; i < n; i++)
+        {
+            int maxRow = i;
+            for (int k = i + 1; k < n; k++)
+                if (std::abs(temp[k][i]) > std::abs(temp[maxRow][i]))
+                    maxRow = k;
+            if (maxRow != i)
+            {
+                std::swap(temp[i], temp[maxRow]);
+                sign = -sign;
+            }
+            if (std::abs(temp[i][i]) < 1e-12)
+                return 0.0;
+            det *= temp[i][i];
+            for (int k = i + 1; k < n; k++)
+            {
+                double factor = temp[k][i] / temp[i][i];
+                for (int j = i + 1; j < n; j++)
+                    temp[k][j] -= factor * temp[i][j];
+            }
+        }
+        return sign * det;
+    }
+
+    int Matrix::rank()
+    {
+        auto temp = data;
+        int r = 0;
+        for (int col = 0; col < columns && r < rows; col++)
+        {
+            int pivot = -1;
+            for (int row = r; row < rows; row++)
+            {
+                if (std::abs(temp[row][col]) > 1e-12)
+                {
+                    pivot = row;
+                    break;
+                }
+            }
+            if (pivot == -1) continue;
+            std::swap(temp[r], temp[pivot]);
+            for (int row = r + 1; row < rows; row++)
+            {
+                if (std::abs(temp[r][col]) < 1e-12) continue;
+                double factor = temp[row][col] / temp[r][col];
+                for (int j = col; j < columns; j++)
+                    temp[row][j] -= factor * temp[r][j];
+            }
+            r++;
+        }
+        return r;
+    }
+
+    void Matrix::read_from_file(const std::string& filename)
+    {
+        // TODO: implement when file format is defined
+        std::cerr << "[Matrix::read_from_file] Not yet implemented\n";
+    }
+
+    void Matrix::write_to_file(const std::string& filename) const
+    {
+        // TODO: implement when file format is defined
+        std::cerr << "[Matrix::write_to_file] Not yet implemented\n";
+    }
+
+    // =====================================================================
+
     bool evaluate_tolerance(double xn, double xnp1, double tolerance)
     {
         double result = (xnp1 - xn) / xnp1;
@@ -368,5 +630,285 @@ namespace NumericalAnalysis
             point_b = p;
         }
         return -1;
+    }
+
+    // =====================================================================
+    //  Segundo Corte — Sistemas de Ecuaciones Lineales
+    // =====================================================================
+
+    // -----------------------------------------------------------------
+    //  Sustitución Regresiva (Tarea 1)
+    //
+    //  Entrada: Matriz aumentada [R|c] de n×(n+1), donde R es
+    //           triangular superior con r_ii ≠ 0.
+    //  Salida:  Vector solución x como Matrix de n×1.
+    //
+    //  Algoritmo:
+    //    x_n = c_n / r_nn
+    //    Para i = (n-1) hasta 1:
+    //      suma = Σ_{j=i+1}^{n} r_ij * x_j
+    //      x_i = (c_i - suma) / r_ii
+    // -----------------------------------------------------------------
+
+    Matrix regressive_substitution(Matrix matrix)
+    {
+        int n = matrix.getRows();
+        Matrix x(n, 1);
+
+        double rnn = matrix.get(n - 1, n - 1);
+        if (std::abs(rnn) < 1e-12)
+        {
+            std::cerr << "[regressive_substitution] r_nn = 0, no se puede resolver\n";
+            return x;
+        }
+        x.set(n - 1, 0, matrix.get(n - 1, n) / rnn);
+
+        for (int i = n - 2; i >= 0; i--)
+        {
+            double sum = 0.0;
+            for (int j = i + 1; j < n; j++)
+                sum += matrix.get(i, j) * x.get(j, 0);
+
+            double rii = matrix.get(i, i);
+            if (std::abs(rii) < 1e-12)
+            {
+                std::cerr << "[regressive_substitution] r_" << i+1 << i+1
+                          << " = 0, no se puede resolver\n";
+                return x;
+            }
+            x.set(i, 0, (matrix.get(i, n) - sum) / rii);
+        }
+
+        return x;
+    }
+
+    // -----------------------------------------------------------------
+    //  Eliminación Gaussiana con sustitución hacia atrás (Tarea 2)
+    //
+    //  Entrada: Matriz aumentada [A|b] de n×(n+1).
+    //  Salida:  Vector solución x como Matrix de n×1.
+    //
+    //  Algoritmo:
+    //    Proceso de eliminación (i = 1..n-1):
+    //      Buscar pivote p (menor índice con a_pi ≠ 0)
+    //      Intercambiar filas si p ≠ i
+    //      Para j = i+1..n: E_j ← E_j - (a_ji/a_ii)*E_i
+    //    Verificar a_nn ≠ 0
+    //    Sustitución regresiva
+    // -----------------------------------------------------------------
+
+    Matrix gaussian_elimination_with_regressive_substitution(Matrix matrix)
+    {
+        int n = matrix.getRows();
+
+        for (int i = 0; i < n - 1; i++)
+        {
+            // Buscar el menor p ≥ i tal que a[p][i] ≠ 0
+            int p = -1;
+            for (int k = i; k < n; k++)
+            {
+                if (std::abs(matrix.get(k, i)) > 1e-12)
+                {
+                    p = k;
+                    break;
+                }
+            }
+
+            if (p == -1)
+            {
+                std::cerr << "[gaussian_elimination] No existe solución única\n";
+                return Matrix(n, 1);
+            }
+
+            // Intercambio de filas si p ≠ i
+            if (p != i)
+            {
+                for (int j = 0; j <= n; j++)
+                {
+                    double temp = matrix.get(i, j);
+                    matrix.set(i, j, matrix.get(p, j));
+                    matrix.set(p, j, temp);
+                }
+            }
+
+            // Eliminación: E_j ← E_j - m_ji * E_i
+            for (int j = i + 1; j < n; j++)
+            {
+                double mji = matrix.get(j, i) / matrix.get(i, i);
+                for (int k = i; k <= n; k++)
+                    matrix.set(j, k, matrix.get(j, k) - mji * matrix.get(i, k));
+            }
+        }
+
+        if (std::abs(matrix.get(n - 1, n - 1)) < 1e-12)
+        {
+            std::cerr << "[gaussian_elimination] No existe solución única (a_nn = 0)\n";
+            return Matrix(n, 1);
+        }
+
+        return regressive_substitution(matrix);
+    }
+
+    // -----------------------------------------------------------------
+    //  Factorización LU con pivoteo parcial — PA = LU (Tarea 3)
+    //
+    //  Entrada: Matriz aumentada [A|b] de n×(n+1).
+    //  Salida:  Vector solución x como Matrix de n×1.
+    //
+    //  Algoritmo (pg. 38-39 de los apuntes):
+    //    1. Vector de permutación P: p_i = i
+    //    2. Para j = 1..n:
+    //       2.1 Pivoteo parcial: r = argmax |a_rj|
+    //       2.2 Si a_rj = 0 → A singular
+    //       2.3 Intercambio de filas (P, b, A)
+    //       2.4 Eliminación: almacenar multiplicadores en L,
+    //           actualizar b y A
+    //    3. Verificar a_nn ≠ 0
+    //    4. Construir L, U (quedan en la misma matriz)
+    //    5. Resolver Ux = b_modificado (sustitución regresiva)
+    // -----------------------------------------------------------------
+
+    Matrix lu_substitution(Matrix matrix)
+    {
+        int n = matrix.getRows();
+        std::vector<int> perm(n);
+        for (int i = 0; i < n; i++) perm[i] = i;
+
+        for (int j = 0; j < n; j++)
+        {
+            // 2.1 Pivoteo parcial: buscar r con |a_rj| máximo
+            int r = j;
+            double maxVal = std::abs(matrix.get(j, j));
+            for (int i = j + 1; i < n; i++)
+            {
+                double val = std::abs(matrix.get(i, j));
+                if (val > maxVal)
+                {
+                    maxVal = val;
+                    r = i;
+                }
+            }
+
+            // 2.2 Chequeo de singularidad
+            if (maxVal < 1e-12)
+            {
+                std::cerr << "[lu_substitution] Matriz singular, no se puede factorizar\n";
+                return Matrix(n, 1);
+            }
+
+            // 2.3 Intercambio de filas
+            if (r != j)
+            {
+                std::swap(perm[j], perm[r]);
+                for (int k = 0; k <= n; k++)
+                {
+                    double temp = matrix.get(j, k);
+                    matrix.set(j, k, matrix.get(r, k));
+                    matrix.set(r, k, temp);
+                }
+            }
+
+            // 2.4 Eliminación
+            for (int i = j + 1; i < n; i++)
+            {
+                double mij = matrix.get(i, j) / matrix.get(j, j);
+                matrix.set(i, j, mij);
+                matrix.set(i, n, matrix.get(i, n) - mij * matrix.get(j, n));
+                for (int k = j + 1; k < n; k++)
+                    matrix.set(i, k, matrix.get(i, k) - mij * matrix.get(j, k));
+            }
+        }
+
+        // 3. Chequeo final
+        if (std::abs(matrix.get(n - 1, n - 1)) < 1e-12)
+        {
+            std::cerr << "[lu_substitution] Matriz singular (a_nn = 0)\n";
+            return Matrix(n, 1);
+        }
+
+        // 5. Resolver Ux = b_modificado con sustitución regresiva
+        Matrix upper(n, n + 1);
+        for (int i = 0; i < n; i++)
+        {
+            for (int jj = i; jj < n; jj++)
+                upper.set(i, jj, matrix.get(i, jj));
+            upper.set(i, n, matrix.get(i, n));
+        }
+
+        return regressive_substitution(upper);
+    }
+
+    // -----------------------------------------------------------------
+    //  Método Iterativo de Gauss-Seidel (Tarea 4)
+    //
+    //  Entrada: Matriz aumentada [A|b] de n×(n+1),
+    //           vector inicial x0 (Matrix n×1),
+    //           tolerancia E, máximo de iteraciones N.
+    //  Salida:  Vector solución x como Matrix de n×1.
+    //
+    //  Algoritmo (pg. 44 de los apuntes):
+    //    k = 1
+    //    Mientras k ≤ N:
+    //      Para i = 1..n:
+    //        x_i = (1/a_ii)(b_i - Σ_{j<i} a_ij*x_j - Σ_{j>i} a_ij*x0_j)
+    //        (usa valores nuevos para j<i, valores viejos para j>i)
+    //      Si ||x - x0||∞ < E → Éxito
+    //      x0 ← x
+    //    Fracaso
+    //
+    //  Convergencia garantizada si A es diagonal estrictamente
+    //  dominante sobre filas: |a_ii| > Σ_{j≠i} |a_ij|
+    // -----------------------------------------------------------------
+
+    Matrix gauss_seidel(Matrix matrix, Matrix initial, double tolerance, int iterations)
+    {
+        int n = matrix.getRows();
+        Matrix x0(n, 1);
+        Matrix x(n, 1);
+
+        for (int i = 0; i < n; i++)
+            x0.set(i, 0, initial.get(i, 0));
+
+        for (int k = 0; k < iterations; k++)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                double sum = 0.0;
+                for (int j = 0; j < n; j++)
+                {
+                    if (j < i)
+                        sum += matrix.get(i, j) * x.get(j, 0);
+                    else if (j > i)
+                        sum += matrix.get(i, j) * x0.get(j, 0);
+                }
+
+                double aii = matrix.get(i, i);
+                if (std::abs(aii) < 1e-12)
+                {
+                    std::cerr << "[gauss_seidel] a_" << i+1 << i+1
+                              << " = 0, no se puede resolver\n";
+                    return x;
+                }
+                x.set(i, 0, (matrix.get(i, n) - sum) / aii);
+            }
+
+            // Norma infinito de (x - x0)
+            double norm = 0.0;
+            for (int i = 0; i < n; i++)
+            {
+                double diff = std::abs(x.get(i, 0) - x0.get(i, 0));
+                if (diff > norm) norm = diff;
+            }
+
+            if (norm < tolerance)
+                return x;
+
+            for (int i = 0; i < n; i++)
+                x0.set(i, 0, x.get(i, 0));
+        }
+
+        std::cerr << "[gauss_seidel] Se excedió el máximo de iteraciones ("
+                  << iterations << ")\n";
+        return x;
     }
 }
