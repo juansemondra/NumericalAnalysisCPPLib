@@ -13,6 +13,10 @@
     void call_lu_substitution();
     void call_gauss_seidel();
 
+    void call_inferior_sums();
+    void call_superior_sums();
+    void call_trapezoidal_rule();
+
     void print_menu();
     void check_error(double value);
 

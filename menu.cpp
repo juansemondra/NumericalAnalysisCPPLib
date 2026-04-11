@@ -308,23 +308,89 @@ void call_gauss_seidel()
     print_solution(result);
 }
 
+static void read_integration_params(double &a, double &b, int &n)
+{
+    a = read_value<double>("Ingrese el límite inferior a: ");
+    b = read_value<double>("Ingrese el límite superior b: ");
+    while (b <= a)
+    {
+        std::cout << "  b debe ser mayor que a.\n";
+        b = read_value<double>("Ingrese el límite superior b: ");
+    }
+    n = 0;
+    while (n <= 0)
+    {
+        n = read_value<int>("Ingrese el número de subintervalos n (> 0): ");
+        if (n <= 0) std::cout << "  n debe ser un entero positivo.\n";
+    }
+}
+
+void call_inferior_sums()
+{
+    std::cin.ignore();
+    NumericalAnalysis::Function func = read_function();
+    func.print();
+
+    double a, b;
+    int n;
+    read_integration_params(a, b, n);
+
+    double result = NumericalAnalysis::inferior_sums(func, a, b, n);
+    std::cout << "\nSuma inferior L(A) = " << std::fixed
+              << std::setprecision(8) << result << "\n\n";
+}
+
+void call_superior_sums()
+{
+    std::cin.ignore();
+    NumericalAnalysis::Function func = read_function();
+    func.print();
+
+    double a, b;
+    int n;
+    read_integration_params(a, b, n);
+
+    double result = NumericalAnalysis::superior_sums(func, a, b, n);
+    std::cout << "\nSuma superior U(A) = " << std::fixed
+              << std::setprecision(8) << result << "\n\n";
+}
+
+void call_trapezoidal_rule()
+{
+    std::cin.ignore();
+    NumericalAnalysis::Function func = read_function();
+    func.print();
+
+    double a, b;
+    int n;
+    read_integration_params(a, b, n);
+
+    double result = NumericalAnalysis::trapezoidal_rule(func, a, b, n);
+    std::cout << "\nRegla del trapecio T(h) = " << std::fixed
+              << std::setprecision(8) << result << "\n\n";
+}
+
 void print_menu(){
     std::cout << "\n========================================\n";
     std::cout << " Análisis Numérico\n";
     std::cout << "========================================\n";
     std::cout << "--- Primer Corte: Ceros de Funciones ---\n";
-    std::cout << " 1. Método de la bisección\n";
-    std::cout << " 2. Método del punto fijo\n";
-    std::cout << " 3. Método de la posición falsa\n";
-    std::cout << " 4. Método de Newton-Raphson\n";
-    std::cout << " 5. Método de la secante\n";
+    std::cout << "  1. Método de la bisección\n";
+    std::cout << "  2. Método del punto fijo\n";
+    std::cout << "  3. Método de la posición falsa\n";
+    std::cout << "  4. Método de Newton-Raphson\n";
+    std::cout << "  5. Método de la secante\n";
     std::cout << "--- Segundo Corte: Sistemas Lineales ---\n";
-    std::cout << " 6. Sustitución regresiva\n";
-    std::cout << " 7. Eliminación gaussiana\n";
-    std::cout << " 8. Factorización LU\n";
-    std::cout << " 9. Método de Gauss-Seidel\n";
+    std::cout << "  6. Sustitución regresiva\n";
+    std::cout << "  7. Eliminación gaussiana\n";
+    std::cout << "  8. Factorización LU\n";
+    std::cout << "  9. Método de Gauss-Seidel\n";
+    std::cout << "--- Integración Numérica --------------\n";
+    std::cout << " 10. Sumas inferiores\n";
+    std::cout << " 11. Sumas superiores\n";
+    std::cout << " 12. Regla del trapecio\n";
     std::cout << "----------------------------------------\n";
-    std::cout << " 0. Salir\n";
+    std::cout << "  0. Salir\n";
     std::cout << "========================================\n";
     std::cout << "Opción: ";
 }

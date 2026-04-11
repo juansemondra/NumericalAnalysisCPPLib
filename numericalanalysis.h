@@ -70,6 +70,12 @@ namespace NumericalAnalysis {
     Matrix gaussian_elimination_with_regressive_substitution(Matrix matrix);
     Matrix lu_substitution(Matrix matrix);
     Matrix gauss_seidel(Matrix matrix, Matrix initial, double tolerance, int iterations);
+
+    // Funciones segundo porte parte 2
+    double inferior_sums(Function func, double a, double b, int n);
+    double superior_sums(Function func, double a, double b, int n);
+    double trapezoidal_rule(Function func, double a, double b, int n);
+    
 }
 
 #endif 

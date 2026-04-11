@@ -948,4 +948,46 @@ namespace NumericalAnalysis
                   << iterations << ")\n";
         return x;
     }
+
+    double inferior_sums(Function func, double a, double b, int n)
+    {
+        double dx = (b - a) / n;
+        double sum = 0.0;
+
+        for (int i = 1; i <= n; i++)
+        {
+            double f_prev = func.evaluate(a + (i - 1) * dx);
+            double f_curr = func.evaluate(a + i * dx);
+            sum += std::min(f_prev, f_curr) * dx;
+        }
+
+        return sum;
+    }
+
+    double superior_sums(Function func, double a, double b, int n)
+    {
+        double dx = (b - a) / n;
+        double sum = 0.0;
+
+        for (int i = 1; i <= n; i++)
+        {
+            double f_prev = func.evaluate(a + (i - 1) * dx);
+            double f_curr = func.evaluate(a + i * dx);
+            sum += std::max(f_prev, f_curr) * dx;
+        }
+
+        return sum;
+    }
+
+    double trapezoidal_rule(Function func, double a, double b, int n)
+    {
+        double h = (b - a) / n;
+        double s0 = func.evaluate(a) + func.evaluate(b);
+        double s1 = 0.0;
+
+        for (int i = 1; i < n; i++)
+            s1 += func.evaluate(a + i * h);
+
+        return (h / 2.0) * (s0 + 2.0 * s1);
+    }
 }

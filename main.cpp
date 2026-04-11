@@ -58,6 +58,18 @@ int main(int argc, char **argv)
                 call_gauss_seidel();
             break;
 
+            case 10:
+                call_inferior_sums();
+            break;
+
+            case 11:
+                call_superior_sums();
+            break;
+
+            case 12:
+                call_trapezoidal_rule();
+            break;
+
             case 0:
                 std::cout << "Gracias por usar el sistema!" << std::endl;
                 menu_continue = false;
