@@ -293,7 +293,7 @@ namespace NumericalAnalysis
 
     Matrix::Matrix(const std::string& filename) : rows(0), columns(0)
     {
-        // TODO: implement when file format is defined
+        read_from_file(filename);
     }
 
     Matrix::Matrix(int rows, int columns)
@@ -533,14 +533,51 @@ namespace NumericalAnalysis
 
     void Matrix::read_from_file(const std::string& filename)
     {
-        // TODO: implement when file format is defined
-        std::cerr << "[Matrix::read_from_file] Not yet implemented\n";
+        std::ifstream file(filename);
+        if (!file.is_open())
+        {
+            std::cerr << "[Matrix::read_from_file] No se pudo abrir: "
+                      << filename << "\n";
+            return;
+        }
+
+        data.clear();
+        std::string line;
+        while (std::getline(file, line))
+        {
+            if (line.empty()) continue;
+            std::istringstream iss(line);
+            std::vector<double> row;
+            double val;
+            while (iss >> val)
+                row.push_back(val);
+            if (!row.empty())
+                data.push_back(row);
+        }
+
+        rows = static_cast<int>(data.size());
+        columns = rows > 0 ? static_cast<int>(data[0].size()) : 0;
     }
 
     void Matrix::write_to_file(const std::string& filename) const
     {
-        // TODO: implement when file format is defined
-        std::cerr << "[Matrix::write_to_file] Not yet implemented\n";
+        std::ofstream file(filename);
+        if (!file.is_open())
+        {
+            std::cerr << "[Matrix::write_to_file] No se pudo abrir: "
+                      << filename << "\n";
+            return;
+        }
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < columns; j++)
+            {
+                if (j > 0) file << " ";
+                file << data[i][j];
+            }
+            file << "\n";
+        }
     }
 
     // =====================================================================

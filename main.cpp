@@ -42,6 +42,22 @@ int main(int argc, char **argv)
                 check_error(call_secant_method());
             break;
 
+            case 6:
+                call_regressive_substitution();
+            break;
+
+            case 7:
+                call_gaussian_elimination();
+            break;
+
+            case 8:
+                call_lu_substitution();
+            break;
+
+            case 9:
+                call_gauss_seidel();
+            break;
+
             case 0:
                 std::cout << "Gracias por usar el sistema!" << std::endl;
                 menu_continue = false;
