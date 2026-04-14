@@ -692,6 +692,14 @@ namespace NumericalAnalysis
         int n = matrix.getRows();
         Matrix x(n, 1);
 
+        if (matrix.getCols() != n + 1)
+        {
+            std::cerr << "[regressive_substitution] La matriz debe ser aumentada "
+                      << n << "x" << (n + 1) << ", se recibió "
+                      << n << "x" << matrix.getCols() << "\n";
+            return x;
+        }
+
         double rnn = matrix.get(n - 1, n - 1);
         if (std::abs(rnn) < 1e-12)
         {
@@ -737,6 +745,14 @@ namespace NumericalAnalysis
     Matrix gaussian_elimination_with_regressive_substitution(Matrix matrix)
     {
         int n = matrix.getRows();
+
+        if (matrix.getCols() != n + 1)
+        {
+            std::cerr << "[gaussian_elimination] La matriz debe ser aumentada "
+                      << n << "x" << (n + 1) << ", se recibió "
+                      << n << "x" << matrix.getCols() << "\n";
+            return Matrix(n, 1);
+        }
 
         for (int i = 0; i < n - 1; i++)
         {
@@ -808,6 +824,15 @@ namespace NumericalAnalysis
     Matrix lu_substitution(Matrix matrix)
     {
         int n = matrix.getRows();
+
+        if (matrix.getCols() != n + 1)
+        {
+            std::cerr << "[lu_substitution] La matriz debe ser aumentada "
+                      << n << "x" << (n + 1) << ", se recibió "
+                      << n << "x" << matrix.getCols() << "\n";
+            return Matrix(n, 1);
+        }
+
         std::vector<int> perm(n);
         for (int i = 0; i < n; i++) perm[i] = i;
 
@@ -900,6 +925,15 @@ namespace NumericalAnalysis
     Matrix gauss_seidel(Matrix matrix, Matrix initial, double tolerance, int iterations)
     {
         int n = matrix.getRows();
+
+        if (matrix.getCols() != n + 1)
+        {
+            std::cerr << "[gauss_seidel] La matriz debe ser aumentada "
+                      << n << "x" << (n + 1) << ", se recibió "
+                      << n << "x" << matrix.getCols() << "\n";
+            return Matrix(n, 1);
+        }
+
         Matrix x0(n, 1);
         Matrix x(n, 1);
 

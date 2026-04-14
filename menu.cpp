@@ -208,19 +208,57 @@ static void print_solution(const NumericalAnalysis::Matrix& result)
     std::cout << "\n";
 }
 
+static NumericalAnalysis::Matrix read_augmented_matrix()
+{
+    std::string filename = read_path("Ruta del archivo de la matriz: ");
+    NumericalAnalysis::Matrix m(filename);
+    int r = m.getRows();
+    int c = m.getCols();
+
+    if (r == 0)
+    {
+        std::cerr << "No se pudo leer la matriz.\n";
+        return NumericalAnalysis::Matrix();
+    }
+
+    if (c == r + 1)
+    {
+        std::cout << "\nMatriz aumentada [A|b] (" << r << "x" << c << "):\n";
+        m.print();
+        return m;
+    }
+
+    if (c == r)
+    {
+        std::cout << "\nMatriz cuadrada A (" << r << "x" << c << "):\n";
+        m.print();
+        std::cout << "\nIngrese el vector b (" << r << " valores):\n";
+
+        NumericalAnalysis::Matrix aug(r, r + 1);
+        for (int i = 0; i < r; i++)
+            for (int j = 0; j < r; j++)
+                aug.set(i, j, m.get(i, j));
+
+        for (int i = 0; i < r; i++)
+            aug.set(i, r, read_value<double>(
+                "  b_" + std::to_string(i + 1) + " = "));
+
+        std::cout << "\nMatriz aumentada [A|b]:\n";
+        aug.print();
+        return aug;
+    }
+
+    std::cerr << "\nError: Se leyó una matriz de " << r << "x" << c
+              << ". Se esperaba cuadrada (" << r << "x" << r
+              << ") o aumentada (" << r << "x" << (r + 1) << ").\n\n";
+    return NumericalAnalysis::Matrix();
+}
+
 void call_regressive_substitution()
 {
     std::cin.ignore();
-    std::string filename = read_path("Ruta del archivo de la matriz aumentada [R|c]: ");
-    NumericalAnalysis::Matrix matrix(filename);
-    if (matrix.getRows() == 0)
-    {
-        std::cerr << "No se pudo leer la matriz.\n";
-        return;
-    }
-
-    std::cout << "\nMatriz aumentada [R|c]:\n";
-    matrix.print();
+    NumericalAnalysis::Matrix matrix = read_augmented_matrix();
+    if (matrix.getRows() == 0) return;
 
     NumericalAnalysis::Matrix result =
         NumericalAnalysis::regressive_substitution(matrix);
@@ -230,16 +268,8 @@ void call_regressive_substitution()
 void call_gaussian_elimination()
 {
     std::cin.ignore();
-    std::string filename = read_path("Ruta del archivo de la matriz aumentada [A|b]: ");
-    NumericalAnalysis::Matrix matrix(filename);
-    if (matrix.getRows() == 0)
-    {
-        std::cerr << "No se pudo leer la matriz.\n";
-        return;
-    }
-
-    std::cout << "\nMatriz aumentada [A|b]:\n";
-    matrix.print();
+    NumericalAnalysis::Matrix matrix = read_augmented_matrix();
+    if (matrix.getRows() == 0) return;
 
     NumericalAnalysis::Matrix result =
         NumericalAnalysis::gaussian_elimination_with_regressive_substitution(matrix);
@@ -249,16 +279,8 @@ void call_gaussian_elimination()
 void call_lu_substitution()
 {
     std::cin.ignore();
-    std::string filename = read_path("Ruta del archivo de la matriz aumentada [A|b]: ");
-    NumericalAnalysis::Matrix matrix(filename);
-    if (matrix.getRows() == 0)
-    {
-        std::cerr << "No se pudo leer la matriz.\n";
-        return;
-    }
-
-    std::cout << "\nMatriz aumentada [A|b]:\n";
-    matrix.print();
+    NumericalAnalysis::Matrix matrix = read_augmented_matrix();
+    if (matrix.getRows() == 0) return;
 
     NumericalAnalysis::Matrix result =
         NumericalAnalysis::lu_substitution(matrix);
@@ -268,17 +290,10 @@ void call_lu_substitution()
 void call_gauss_seidel()
 {
     std::cin.ignore();
-    std::string filename = read_path("Ruta del archivo de la matriz aumentada [A|b]: ");
-    NumericalAnalysis::Matrix matrix(filename);
-    if (matrix.getRows() == 0)
-    {
-        std::cerr << "No se pudo leer la matriz.\n";
-        return;
-    }
+    NumericalAnalysis::Matrix matrix = read_augmented_matrix();
+    if (matrix.getRows() == 0) return;
 
     int n = matrix.getRows();
-    std::cout << "\nMatriz aumentada [A|b]:\n";
-    matrix.print();
 
     std::cout << "\nIngrese el vector inicial (" << n << " valores):\n";
     NumericalAnalysis::Matrix initial(n, 1);
