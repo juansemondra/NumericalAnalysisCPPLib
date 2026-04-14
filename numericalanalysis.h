@@ -67,7 +67,9 @@ namespace NumericalAnalysis {
     // Funciones segundo corte
 
     Matrix regressive_substitution(Matrix matrix);
+    Matrix gaussian_elimination_step(Matrix matrix);
     Matrix gaussian_elimination_with_regressive_substitution(Matrix matrix);
+    void   lu_factorization(Matrix A, Matrix& L, Matrix& U);
     Matrix lu_substitution(Matrix matrix);
     Matrix gauss_seidel(Matrix matrix, Matrix initial, double tolerance, int iterations);
 

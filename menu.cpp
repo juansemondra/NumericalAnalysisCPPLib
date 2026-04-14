@@ -208,6 +208,28 @@ static void print_solution(const NumericalAnalysis::Matrix& result)
     std::cout << "\n";
 }
 
+static void print_determinant(NumericalAnalysis::Matrix m)
+{
+    int r = m.getRows();
+    int c = m.getCols();
+    if (r == 0) return;
+
+    if (c == r)
+    {
+        std::cout << "det(A) = " << std::fixed << std::setprecision(6)
+                  << m.determinant() << "\n";
+    }
+    else if (c == r + 1)
+    {
+        NumericalAnalysis::Matrix A(r, r);
+        for (int i = 0; i < r; i++)
+            for (int j = 0; j < r; j++)
+                A.set(i, j, m.get(i, j));
+        std::cout << "det(A) = " << std::fixed << std::setprecision(6)
+                  << A.determinant() << "\n";
+    }
+}
+
 static NumericalAnalysis::Matrix read_augmented_matrix()
 {
     std::string filename = read_path("Ruta del archivo de la matriz: ");
@@ -225,6 +247,7 @@ static NumericalAnalysis::Matrix read_augmented_matrix()
     {
         std::cout << "\nMatriz aumentada [A|b] (" << r << "x" << c << "):\n";
         m.print();
+        print_determinant(m);
         return m;
     }
 
@@ -232,6 +255,7 @@ static NumericalAnalysis::Matrix read_augmented_matrix()
     {
         std::cout << "\nMatriz cuadrada A (" << r << "x" << c << "):\n";
         m.print();
+        print_determinant(m);
         std::cout << "\nIngrese el vector b (" << r << " valores):\n";
 
         NumericalAnalysis::Matrix aug(r, r + 1);
@@ -268,23 +292,153 @@ void call_regressive_substitution()
 void call_gaussian_elimination()
 {
     std::cin.ignore();
-    NumericalAnalysis::Matrix matrix = read_augmented_matrix();
-    if (matrix.getRows() == 0) return;
+    std::string filename = read_path("Ruta del archivo de la matriz: ");
+    NumericalAnalysis::Matrix m(filename);
+    int r = m.getRows();
+    int c = m.getCols();
 
-    NumericalAnalysis::Matrix result =
-        NumericalAnalysis::gaussian_elimination_with_regressive_substitution(matrix);
-    print_solution(result);
+    if (r == 0)
+    {
+        std::cerr << "No se pudo leer la matriz.\n";
+        return;
+    }
+
+    if (c == r)
+    {
+        std::cout << "\nMatriz A (" << r << "x" << c << "):\n";
+        m.print();
+        print_determinant(m);
+
+        NumericalAnalysis::Matrix tri =
+            NumericalAnalysis::gaussian_elimination_step(m);
+        std::cout << "\nMatriz triangulada U:\n";
+        tri.print();
+
+        std::cout << "\n¿Desea resolver un sistema Ax = b? (s/n): ";
+        char opt;
+        std::cin >> opt;
+        flush_cin();
+
+        if (opt == 's' || opt == 'S')
+        {
+            std::cout << "\nIngrese el vector b (" << r << " valores):\n";
+            NumericalAnalysis::Matrix aug(r, r + 1);
+            for (int i = 0; i < r; i++)
+                for (int j = 0; j < r; j++)
+                    aug.set(i, j, m.get(i, j));
+            for (int i = 0; i < r; i++)
+                aug.set(i, r, read_value<double>(
+                    "  b_" + std::to_string(i + 1) + " = "));
+
+            NumericalAnalysis::Matrix result =
+                NumericalAnalysis::gaussian_elimination_with_regressive_substitution(aug);
+            print_solution(result);
+        }
+    }
+    else if (c == r + 1)
+    {
+        std::cout << "\nMatriz aumentada [A|b] (" << r << "x" << c << "):\n";
+        m.print();
+        print_determinant(m);
+
+        NumericalAnalysis::Matrix tri =
+            NumericalAnalysis::gaussian_elimination_step(m);
+        std::cout << "\nMatriz triangulada [U|b']:\n";
+        tri.print();
+
+        NumericalAnalysis::Matrix result =
+            NumericalAnalysis::gaussian_elimination_with_regressive_substitution(m);
+        print_solution(result);
+    }
+    else
+    {
+        std::cerr << "\nError: Se leyó una matriz de " << r << "x" << c
+                  << ". Se esperaba cuadrada (" << r << "x" << r
+                  << ") o aumentada (" << r << "x" << (r + 1) << ").\n\n";
+    }
 }
 
 void call_lu_substitution()
 {
     std::cin.ignore();
-    NumericalAnalysis::Matrix matrix = read_augmented_matrix();
-    if (matrix.getRows() == 0) return;
+    std::string filename = read_path("Ruta del archivo de la matriz: ");
+    NumericalAnalysis::Matrix m(filename);
+    int r = m.getRows();
+    int c = m.getCols();
 
-    NumericalAnalysis::Matrix result =
-        NumericalAnalysis::lu_substitution(matrix);
-    print_solution(result);
+    if (r == 0)
+    {
+        std::cerr << "No se pudo leer la matriz.\n";
+        return;
+    }
+
+    if (c == r)
+    {
+        std::cout << "\nMatriz A (" << r << "x" << c << "):\n";
+        m.print();
+        print_determinant(m);
+
+        NumericalAnalysis::Matrix L, U;
+        NumericalAnalysis::lu_factorization(m, L, U);
+        if (L.getRows() == 0) return;
+
+        std::cout << "\nMatriz L:\n";
+        L.print();
+        std::cout << "\nMatriz U:\n";
+        U.print();
+
+        std::cout << "\n¿Desea resolver un sistema Ax = b? (s/n): ";
+        char opt;
+        std::cin >> opt;
+        flush_cin();
+
+        if (opt == 's' || opt == 'S')
+        {
+            std::cout << "\nIngrese el vector b (" << r << " valores):\n";
+            NumericalAnalysis::Matrix aug(r, r + 1);
+            for (int i = 0; i < r; i++)
+                for (int j = 0; j < r; j++)
+                    aug.set(i, j, m.get(i, j));
+            for (int i = 0; i < r; i++)
+                aug.set(i, r, read_value<double>(
+                    "  b_" + std::to_string(i + 1) + " = "));
+
+            NumericalAnalysis::Matrix result =
+                NumericalAnalysis::lu_substitution(aug);
+            print_solution(result);
+        }
+    }
+    else if (c == r + 1)
+    {
+        std::cout << "\nMatriz aumentada [A|b] (" << r << "x" << c << "):\n";
+        m.print();
+        print_determinant(m);
+
+        NumericalAnalysis::Matrix A(r, r);
+        for (int i = 0; i < r; i++)
+            for (int j = 0; j < r; j++)
+                A.set(i, j, m.get(i, j));
+
+        NumericalAnalysis::Matrix L, U;
+        NumericalAnalysis::lu_factorization(A, L, U);
+        if (L.getRows() > 0)
+        {
+            std::cout << "\nMatriz L:\n";
+            L.print();
+            std::cout << "\nMatriz U:\n";
+            U.print();
+        }
+
+        NumericalAnalysis::Matrix result =
+            NumericalAnalysis::lu_substitution(m);
+        print_solution(result);
+    }
+    else
+    {
+        std::cerr << "\nError: Se leyó una matriz de " << r << "x" << c
+                  << ". Se esperaba cuadrada (" << r << "x" << r
+                  << ") o aumentada (" << r << "x" << (r + 1) << ").\n\n";
+    }
 }
 
 void call_gauss_seidel()

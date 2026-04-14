@@ -548,9 +548,21 @@ namespace NumericalAnalysis
             if (line.empty()) continue;
             std::istringstream iss(line);
             std::vector<double> row;
-            double val;
-            while (iss >> val)
-                row.push_back(val);
+            std::string token;
+            while (iss >> token)
+            {
+                size_t slash = token.find('/');
+                if (slash != std::string::npos)
+                {
+                    double num = std::stod(token.substr(0, slash));
+                    double den = std::stod(token.substr(slash + 1));
+                    row.push_back(num / den);
+                }
+                else
+                {
+                    row.push_back(std::stod(token));
+                }
+            }
             if (!row.empty())
                 data.push_back(row);
         }
@@ -728,18 +740,57 @@ namespace NumericalAnalysis
     }
 
     // -----------------------------------------------------------------
+    //  Eliminación Gaussiana — solo eliminación hacia adelante
+    //
+    //  Acepta cualquier matriz (cuadrada o aumentada).
+    //  Retorna la matriz en forma escalonada (triangular superior).
+    // -----------------------------------------------------------------
+
+    Matrix gaussian_elimination_step(Matrix matrix)
+    {
+        int n = matrix.getRows();
+        int cols = matrix.getCols();
+
+        for (int i = 0; i < n - 1; i++)
+        {
+            int p = -1;
+            for (int k = i; k < n; k++)
+            {
+                if (std::abs(matrix.get(k, i)) > 1e-12)
+                {
+                    p = k;
+                    break;
+                }
+            }
+
+            if (p == -1) continue;
+
+            if (p != i)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    double temp = matrix.get(i, j);
+                    matrix.set(i, j, matrix.get(p, j));
+                    matrix.set(p, j, temp);
+                }
+            }
+
+            for (int j = i + 1; j < n; j++)
+            {
+                double mji = matrix.get(j, i) / matrix.get(i, i);
+                for (int k = i; k < cols; k++)
+                    matrix.set(j, k, matrix.get(j, k) - mji * matrix.get(i, k));
+            }
+        }
+
+        return matrix;
+    }
+
+    // -----------------------------------------------------------------
     //  Eliminación Gaussiana con sustitución hacia atrás (Tarea 2)
     //
     //  Entrada: Matriz aumentada [A|b] de n×(n+1).
     //  Salida:  Vector solución x como Matrix de n×1.
-    //
-    //  Algoritmo:
-    //    Proceso de eliminación (i = 1..n-1):
-    //      Buscar pivote p (menor índice con a_pi ≠ 0)
-    //      Intercambiar filas si p ≠ i
-    //      Para j = i+1..n: E_j ← E_j - (a_ji/a_ii)*E_i
-    //    Verificar a_nn ≠ 0
-    //    Sustitución regresiva
     // -----------------------------------------------------------------
 
     Matrix gaussian_elimination_with_regressive_substitution(Matrix matrix)
@@ -803,22 +854,82 @@ namespace NumericalAnalysis
     }
 
     // -----------------------------------------------------------------
-    //  Factorización LU con pivoteo parcial — PA = LU (Tarea 3)
+    //  Factorización LU con pivoteo parcial — PA = LU
+    //
+    //  Entrada: Matriz cuadrada A de n×n.
+    //  Salida:  Matrices L y U tales que PA = LU.
+    // -----------------------------------------------------------------
+
+    void lu_factorization(Matrix A, Matrix& L, Matrix& U)
+    {
+        int n = A.getRows();
+
+        if (A.getCols() != n)
+        {
+            std::cerr << "[lu_factorization] Se esperaba una matriz cuadrada, se recibió "
+                      << n << "x" << A.getCols() << "\n";
+            L = Matrix(); U = Matrix();
+            return;
+        }
+
+        Matrix work(n, n);
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                work.set(i, j, A.get(i, j));
+
+        for (int j = 0; j < n; j++)
+        {
+            int r = j;
+            double maxVal = std::abs(work.get(j, j));
+            for (int i = j + 1; i < n; i++)
+            {
+                double val = std::abs(work.get(i, j));
+                if (val > maxVal) { maxVal = val; r = i; }
+            }
+
+            if (maxVal < 1e-12)
+            {
+                std::cerr << "[lu_factorization] Matriz singular, no se puede factorizar\n";
+                L = Matrix(); U = Matrix();
+                return;
+            }
+
+            if (r != j)
+            {
+                for (int k = 0; k < n; k++)
+                {
+                    double temp = work.get(j, k);
+                    work.set(j, k, work.get(r, k));
+                    work.set(r, k, temp);
+                }
+            }
+
+            for (int i = j + 1; i < n; i++)
+            {
+                double mij = work.get(i, j) / work.get(j, j);
+                work.set(i, j, mij);
+                for (int k = j + 1; k < n; k++)
+                    work.set(i, k, work.get(i, k) - mij * work.get(j, k));
+            }
+        }
+
+        L = Matrix(n, n);
+        U = Matrix(n, n);
+        for (int i = 0; i < n; i++)
+        {
+            L.set(i, i, 1.0);
+            for (int j = 0; j < i; j++)
+                L.set(i, j, work.get(i, j));
+            for (int j = i; j < n; j++)
+                U.set(i, j, work.get(i, j));
+        }
+    }
+
+    // -----------------------------------------------------------------
+    //  Sustitución LU — Resuelve Ax = b usando PA = LU (Tarea 3)
     //
     //  Entrada: Matriz aumentada [A|b] de n×(n+1).
     //  Salida:  Vector solución x como Matrix de n×1.
-    //
-    //  Algoritmo (pg. 38-39 de los apuntes):
-    //    1. Vector de permutación P: p_i = i
-    //    2. Para j = 1..n:
-    //       2.1 Pivoteo parcial: r = argmax |a_rj|
-    //       2.2 Si a_rj = 0 → A singular
-    //       2.3 Intercambio de filas (P, b, A)
-    //       2.4 Eliminación: almacenar multiplicadores en L,
-    //           actualizar b y A
-    //    3. Verificar a_nn ≠ 0
-    //    4. Construir L, U (quedan en la misma matriz)
-    //    5. Resolver Ux = b_modificado (sustitución regresiva)
     // -----------------------------------------------------------------
 
     Matrix lu_substitution(Matrix matrix)
@@ -940,6 +1051,9 @@ namespace NumericalAnalysis
         for (int i = 0; i < n; i++)
             x0.set(i, 0, initial.get(i, 0));
 
+        std::cout << "\n--- Iteraciones de Gauss-Seidel ---\n";
+        std::cout << std::fixed << std::setprecision(8);
+
         for (int k = 0; k < iterations; k++)
         {
             for (int i = 0; i < n; i++)
@@ -963,7 +1077,6 @@ namespace NumericalAnalysis
                 x.set(i, 0, (matrix.get(i, n) - sum) / aii);
             }
 
-            // Norma infinito de (x - x0)
             double norm = 0.0;
             for (int i = 0; i < n; i++)
             {
@@ -971,8 +1084,19 @@ namespace NumericalAnalysis
                 if (diff > norm) norm = diff;
             }
 
+            std::cout << "  Iter " << std::setw(3) << (k + 1) << ":  x = [";
+            for (int i = 0; i < n; i++)
+            {
+                if (i > 0) std::cout << ", ";
+                std::cout << std::setw(14) << x.get(i, 0);
+            }
+            std::cout << " ]  ||e|| = " << norm << "\n";
+
             if (norm < tolerance)
+            {
+                std::cout << "  Convergencia alcanzada en " << (k + 1) << " iteraciones.\n";
                 return x;
+            }
 
             for (int i = 0; i < n; i++)
                 x0.set(i, 0, x.get(i, 0));
