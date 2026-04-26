@@ -545,13 +545,21 @@ void call_simpson_rule()
     NumericalAnalysis::Function func = read_function();
     func.print();
 
-    double a, b;
-    int n;
-    read_integration_params(a, b, n);
+    double a = read_value<double>("Ingrese el límite inferior a: ");
+    double b = read_value<double>("Ingrese el límite superior b: ");
+    while (b <= a)
+    {
+        std::cout << "  b debe ser mayor que a.\n";
+        b = read_value<double>("Ingrese el límite superior b: ");
+    }
+
+    std::cout << "  Nota: para Simpson compuesta, n debe ser PAR.\n";
+    int n = 0;
     while (n <= 0 || n % 2 != 0)
     {
-        std::cout << "  Para Simpson compuesta, n debe ser un entero positivo par.\n";
-        n = read_value<int>("Ingrese el número de subintervalos n (> 0): ");
+        n = read_value<int>("Ingrese el número de subintervalos n (par y > 0): ");
+        if (n <= 0 || n % 2 != 0)
+            std::cout << "  Valor inválido: n debe ser un entero positivo par.\n";
     }
 
     double result = NumericalAnalysis::simpson_rule(func, a, b, n);
