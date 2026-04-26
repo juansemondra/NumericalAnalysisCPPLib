@@ -1148,4 +1148,27 @@ namespace NumericalAnalysis
 
         return (h / 2.0) * (s0 + 2.0 * s1);
     }
+
+    double simpson_rule(Function func, double a, double b, int n)
+    {
+        if (n <= 0 || n % 2 != 0)
+        {
+            std::cerr << "[simpson_rule] n debe ser un entero positivo par\n";
+            return -1;
+        }
+
+        double h = (b - a) / n;
+        double s0 = func.evaluate(a) + func.evaluate(b);
+        double s1 = 0.0; // Terminos con indice impar
+        double s2 = 0.0; // Terminos con indice par
+
+        for (int i = 1; i < n; i++)
+        {
+            double fx = func.evaluate(a + i * h);
+            if (i % 2 == 0) s2 += fx;
+            else            s1 += fx;
+        }
+
+        return (h / 3.0) * (s0 + 4.0 * s1 + 2.0 * s2);
+    }
 }

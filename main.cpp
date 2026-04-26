@@ -70,6 +70,10 @@ int main(int argc, char **argv)
                 call_trapezoidal_rule();
             break;
 
+            case 13:
+                call_simpson_rule();
+            break;
+
             case 0:
                 std::cout << "Gracias por usar el sistema!" << std::endl;
                 menu_continue = false;

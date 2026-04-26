@@ -77,7 +77,7 @@ namespace NumericalAnalysis {
     double inferior_sums(Function func, double a, double b, int n);
     double superior_sums(Function func, double a, double b, int n);
     double trapezoidal_rule(Function func, double a, double b, int n);
-    
+    double simpson_rule(Function func, double a, double b, int n);
 }
 
 #endif 

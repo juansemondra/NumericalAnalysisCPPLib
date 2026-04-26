@@ -539,6 +539,26 @@ void call_trapezoidal_rule()
               << std::setprecision(8) << result << "\n\n";
 }
 
+void call_simpson_rule()
+{
+    std::cin.ignore();
+    NumericalAnalysis::Function func = read_function();
+    func.print();
+
+    double a, b;
+    int n;
+    read_integration_params(a, b, n);
+    while (n <= 0 || n % 2 != 0)
+    {
+        std::cout << "  Para Simpson compuesta, n debe ser un entero positivo par.\n";
+        n = read_value<int>("Ingrese el número de subintervalos n (> 0): ");
+    }
+
+    double result = NumericalAnalysis::simpson_rule(func, a, b, n);
+    std::cout << "\nRegla de Simpson compuesta S(h) = " << std::fixed
+              << std::setprecision(8) << result << "\n\n";
+}
+
 void print_menu(){
     std::cout << "\n========================================\n";
     std::cout << " Análisis Numérico\n";
@@ -558,6 +578,7 @@ void print_menu(){
     std::cout << " 10. Sumas inferiores\n";
     std::cout << " 11. Sumas superiores\n";
     std::cout << " 12. Regla del trapecio\n";
+    std::cout << " 13. Regla de Simpson Compuesta\n";
     std::cout << "----------------------------------------\n";
     std::cout << "  0. Salir\n";
     std::cout << "========================================\n";
