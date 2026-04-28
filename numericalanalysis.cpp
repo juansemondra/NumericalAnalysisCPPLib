@@ -12,6 +12,37 @@
 namespace NumericalAnalysis
 {
 
+    static bool parse_exp_arg(const std::string &arg, double &a, int &n, double &c)
+    {
+        // g(x) accepted forms:
+        //   x, -x, 3x, -3x, 2x^2, -0.5x^3, 4
+        static const std::regex arg_re(
+            R"(^([+-]?)(?:(\d+\.?\d*|\.?\d+)?x(?:\^(\d+))?|(\d+\.?\d*|\.?\d+))$)");
+
+        std::smatch m;
+        if (!std::regex_match(arg, m, arg_re)) return false;
+
+        std::string sign = m[1].str();
+        std::string coef_digits = m[2].str();
+        std::string degree_str = m[3].str();
+        std::string constant_str = m[4].str();
+
+        if (!constant_str.empty())
+        {
+            c = std::stod(constant_str);
+            if (sign == "-") c = -c;
+            a = 0.0;
+            n = 0;
+            return true;
+        }
+
+        a = coef_digits.empty() ? 1.0 : std::stod(coef_digits);
+        if (sign == "-") a = -a;
+        n = degree_str.empty() ? 1 : std::stoi(degree_str);
+        c = 0.0;
+        return true;
+    }
+
     static double eval_arg(const std::string &arg, double x)
     {
         if (arg.size() > 2 && arg[0] == 'x' && arg[1] == '^')
@@ -39,7 +70,11 @@ namespace NumericalAnalysis
 
         // Trig key must have normalised arg, e.g. "sin(x^2)" — never bare "sin(x)"
         static const std::regex trig_key_re(R"(^(sin|cos|tan)\(x\^\d+\)$)");
-        return std::regex_match(key, trig_key_re);
+        if (std::regex_match(key, trig_key_re)) return true;
+
+        static const std::regex exp_key_re(
+            R"(^exp\(([+-]?)(?:(\d+\.?\d*|\.?\d+)?x(?:\^\d+)?|(\d+\.?\d*|\.?\d+))\)$)");
+        return std::regex_match(key, exp_key_re);
     }
 
     double Function::evaluate_key(const std::string &key, double x) const
@@ -48,6 +83,8 @@ namespace NumericalAnalysis
             return std::pow(x, std::stoi(key.substr(2)));
 
         static const std::regex trig_key_re(R"(^(sin|cos|tan)\((x\^\d+)\)$)");
+        static const std::regex exp_key_re(
+            R"(^exp\((([+-]?)(?:(\d+\.?\d*|\.?\d+)?x(?:\^(\d+))?|(\d+\.?\d*|\.?\d+)))\)$)");
         std::smatch m;
         if (std::regex_match(key, m, trig_key_re))
         {
@@ -56,6 +93,18 @@ namespace NumericalAnalysis
             if (func == "sin") return std::sin(av);
             if (func == "cos") return std::cos(av);
             if (func == "tan") return std::tan(av);
+        }
+
+        if (std::regex_match(key, m, exp_key_re))
+        {
+            std::string inner = m[1].str();
+            double a = 0.0, c = 0.0;
+            int n = 0;
+            if (parse_exp_arg(inner, a, n, c))
+            {
+                double gx = (a == 0.0) ? c : a * std::pow(x, n);
+                return std::exp(gx);
+            }
         }
 
         std::cerr << "[Function::evaluate_key] Unknown key: \"" << key << "\"\n";
@@ -86,6 +135,8 @@ namespace NumericalAnalysis
         double result = 0.0;
 
         static const std::regex trig_key_re(R"(^(sin|cos|tan)\((x\^\d+)\)$)");
+        static const std::regex exp_key_re(
+            R"(^exp\((([+-]?)(?:(\d+\.?\d*|\.?\d+)?x(?:\^(\d+))?|(\d+\.?\d*|\.?\d+)))\)$)");
 
         for (const auto &[key, coef] : coeff)
         {
@@ -117,6 +168,25 @@ namespace NumericalAnalysis
                 int degree = std::stoi(key.substr(2));
                 if (degree == 0) continue; 
                 result += c * degree * std::pow(x, degree - 1);
+                continue;
+            }
+
+            if (std::regex_match(key, m, exp_key_re))
+            {
+                std::string inner = m[1].str();
+                double a = 0.0, k = 0.0;
+                int n = 0;
+                if (!parse_exp_arg(inner, a, n, k))
+                {
+                    std::cerr << "[Function::derivate_evaluate] Invalid exp arg: \""
+                              << inner << "\"\n";
+                    continue;
+                }
+
+                // g(x) = a*x^n + k  => g'(x) = a*n*x^(n-1), or 0 if constant
+                double gx  = (a == 0.0) ? k : a * std::pow(x, n);
+                double gpx = (a == 0.0 || n == 0) ? 0.0 : a * n * std::pow(x, n - 1);
+                result += c * std::exp(gx) * gpx;
                 continue;
             }
 
@@ -210,6 +280,9 @@ namespace NumericalAnalysis
         static const std::regex trig_re(
             R"(^([+-]?)(\d+\.?\d*|\.?\d+)?(sin|cos|tan)\((x(?:\^(\d+))?)\)$)");
 
+        static const std::regex exp_re(
+            R"(^([+-]?)(\d+\.?\d*|\.?\d+)?e\^\((([+-]?)(?:(\d+\.?\d*|\.?\d+)?x(?:\^(\d+))?|(\d+\.?\d*|\.?\d+)))\)$)");
+
         static const std::regex poly_re(
             R"(^([+-]?)(\d+\.?\d*|\.?\d+)?(x?)(?:\^(\d+))?$)");
 
@@ -231,6 +304,30 @@ namespace NumericalAnalysis
                 if (sign == "-") value = -value;
 
                 std::string key = func + "(" + norm_arg + ")";
+                if (coeff.count(key)) coeff[key] += value;
+                else                  coeff.emplace(key, value);
+                continue;
+            }
+
+            if (std::regex_match(term, m, exp_re))
+            {
+                std::string sign   = m[1].str();
+                std::string digits = m[2].str();
+                std::string inner  = m[3].str();
+
+                float value = digits.empty() ? 1.0f : std::stof(digits);
+                if (sign == "-") value = -value;
+
+                double a = 0.0, c = 0.0;
+                int n = 0;
+                if (!parse_exp_arg(inner, a, n, c))
+                {
+                    std::cerr << "[Function::extract_expression] Invalid exponent in e^(...): \""
+                              << term << "\"\n";
+                    continue;
+                }
+
+                std::string key = "exp(" + inner + ")";
                 if (coeff.count(key)) coeff[key] += value;
                 else                  coeff.emplace(key, value);
                 continue;
